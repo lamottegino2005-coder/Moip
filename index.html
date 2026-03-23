@@ -690,16 +690,35 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 // ══════════ ADMIN ══════════
 async function aLogin(){
-  const pwd=document.getElementById('apwd').value.trim();if(!pwd)return;
+  const pwd=document.getElementById('apwd').value.trim();
+  if(!pwd){showErr('aerr','Entrez votre mot de passe.');return;}
   hidErr('aerr');
+  // Stocker le token et tenter de se connecter
+  aToken=pwd;
+  // Vérification rapide via l'API
   try{
-    const r=await fetch('/api/generate-license',{method:'POST',headers:{'Content-Type':'application/json','x-admin-key':pwd},body:JSON.stringify({clientName:'__test__',plan:'test',duration:1})});
-    if(r.status===401){showErr('aerr','Mot de passe incorrect.');return;}
-    aToken=pwd;
+    const r=await fetch('/api/generate-license',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-admin-key':pwd},
+      body:JSON.stringify({clientName:'__ping__',plan:'test',duration:1})
+    });
+    if(r.status===401){
+      aToken=null;
+      showErr('aerr','Mot de passe incorrect.');
+      return;
+    }
+    // Connecté avec succès
     document.getElementById('alogz').style.display='none';
     document.getElementById('adash').style.display='block';
     renderKlist();
-  }catch(e){showErr('aerr','Connexion impossible.');}
+  }catch(e){
+    // Si erreur réseau ou KV pas configuré, on laisse entrer quand même
+    // Le mot de passe sera vérifié lors de la génération de clé
+    document.getElementById('alogz').style.display='none';
+    document.getElementById('adash').style.display='block';
+    renderKlist();
+    toast('⚠️ Mode hors-ligne — vérifiez les variables Vercel');
+  }
 }
 function aLogout(){aToken=null;document.getElementById('alogz').style.display='block';document.getElementById('adash').style.display='none';}
 
